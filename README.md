@@ -43,13 +43,13 @@ rv_H  = truncnorm((lo - np.log(1))  / 0.75, (hi - np.log(1))  / 0.75, loc=np.log
 rv_Fe = truncnorm((lo - np.log(56)) / 0.75, (hi - np.log(56)) / 0.75, loc=np.log(56), scale=0.75)
 
 # 2. Generate (or load) observed data
-rng  = np.random.default_rng(42)
-data = np.concatenate([rv_H.rvs(300, random_state=0), rv_Fe.rvs(100, random_state=1)])
+seed = 42
+data = np.concatenate([rv_H.rvs(300, random_state=seed), rv_Fe.rvs(100, random_state=seed)])
 
 # 3. Run the fit
 fit = Template_Analysis(minos=False, binned=False, strategy=0)
 fit.join_pdfs([rv_H.pdf, rv_Fe.pdf])
-fit.template_likelihood(data, bins=np.linspace(lo, hi, 51), set_fitrange=(lo, hi))
+fit.template_likelihood(data, set_bins=np.linspace(lo, hi, 51), set_fitrange=(lo, hi))
 
 # 4. Retrieve results
 res = fit.get_results()
