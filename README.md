@@ -82,7 +82,22 @@ Build the cost function and run the fit.
 | `data`         | array-like        | Observed events |
 | `bins`         | int or array-like | Bin count or explicit edges |
 | `set_fitrange` | tuple             | `(low, high)` fit range (used when `bins` is an int) |
-| `weights`      | array-like        | Per-event weights (unbinned mode only) |
+| `weights`      | array-like        | Per-event weights (both binned and unbinned modes) |
+
+**Weighted fits:**  in binned mode the weights are forwarded to `numpy.histogram`.
+In unbinned mode, because `iminuit.cost.ExtendedUnbinnedNLL` does not expose a
+weights parameter, a weighted extended NLL is used:
+
+```
+2 * ( Σ N_i  −  Σ_j w_j · log( Σ_i N_i · pdf_i(x_j) ) )
+```
+
+Example:
+
+```python
+weights = np.where(heavy_flag, 2.0, 1.0)   # up-weight heavy events
+fit.template_likelihood(data, bins=50, set_fitrange=(lo, hi), weights=weights)
+```
 
 ### `.get_results()`
 

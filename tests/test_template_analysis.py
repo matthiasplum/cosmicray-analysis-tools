@@ -243,6 +243,64 @@ class TestFourComponents:
 
 
 # ---------------------------------------------------------------------------
+# Weighted fits
+# ---------------------------------------------------------------------------
+
+class TestWeightedFit:
+    """Weights should be accepted in both modes without error, and the fit
+    should still converge and return sensible fractions."""
+
+    def _weighted_data_and_weights(self):
+        """Return data + weights where heavier events belong to the high PDF."""
+        rng = np.random.default_rng(7)
+        data = _make_data()
+        # Up-weight the high-mean component (second half of data = N_HIGH events)
+        weights = np.ones(len(data))
+        weights[N_LOW:] = 3.0
+        return data, weights
+
+    def test_unbinned_weighted_converges(self):
+        data, weights = self._weighted_data_and_weights()
+        ta = _make_fitter(binned=False)
+        ta.template_likelihood(data, BINS, FIT_RANGE, weights=weights)
+        assert ta.minuit.valid
+
+    def test_unbinned_weighted_fractions_sum_to_one(self):
+        data, weights = self._weighted_data_and_weights()
+        ta = _make_fitter(binned=False)
+        ta.template_likelihood(data, BINS, FIT_RANGE, weights=weights)
+        res = ta.get_results()
+        assert abs(sum(res["fractions"].values()) - 1.0) < 1e-9
+
+    def test_unbinned_weighted_shifts_fraction(self):
+        """Up-weighting the high component should increase its fitted fraction."""
+        data_uw = _make_data()
+        ta_uw = _make_fitter(binned=False)
+        ta_uw.template_likelihood(data_uw, BINS, FIT_RANGE)
+        f2_unweighted = ta_uw.get_results()["fractions"]["N2"]
+
+        data_w, weights = self._weighted_data_and_weights()
+        ta_w = _make_fitter(binned=False)
+        ta_w.template_likelihood(data_w, BINS, FIT_RANGE, weights=weights)
+        f2_weighted = ta_w.get_results()["fractions"]["N2"]
+
+        assert f2_weighted > f2_unweighted
+
+    def test_binned_weighted_converges(self):
+        data, weights = self._weighted_data_and_weights()
+        ta = _make_fitter(binned=True)
+        ta.template_likelihood(data, BINS, FIT_RANGE, weights=weights)
+        assert ta.minuit.valid
+
+    def test_binned_weighted_fractions_sum_to_one(self):
+        data, weights = self._weighted_data_and_weights()
+        ta = _make_fitter(binned=True)
+        ta.template_likelihood(data, BINS, FIT_RANGE, weights=weights)
+        res = ta.get_results()
+        assert abs(sum(res["fractions"].values()) - 1.0) < 1e-9
+
+
+# ---------------------------------------------------------------------------
 # draw() smoke test
 # ---------------------------------------------------------------------------
 

@@ -19,7 +19,9 @@ class Template_Analysis:
     template fits to binned data with bin-wise Poisson uncertainties.
 
     For unbinned fits, uses iminuit.cost.ExtendedUnbinnedNLL which fits a
-    mixture of unnormalised PDFs to raw event data.
+    mixture of unnormalised PDFs to raw event data. When per-event weights are
+    provided, a hand-rolled weighted extended NLL is used instead because
+    iminuit.cost.ExtendedUnbinnedNLL does not expose a weights parameter.
 
     Parameters
     ----------
@@ -40,6 +42,9 @@ class Template_Analysis:
         self.template_pdfs = None
         self.cost_func = None
         self.minuit = None
+        self._data = None
+        self._weights = None
+        self._custom_cost = False  # True when hand-rolled weighted NLL is used
 
     def join_pdfs(self, template_pdfs):
         """
@@ -67,20 +72,27 @@ class Template_Analysis:
         set_fitrange : tuple
             (low, high) fit range used when set_bins is an int.
         weights : array-like, optional
-            Per-event weights (unbinned mode only).
+            Per-event weights. Supported in both binned and unbinned modes.
+            In binned mode the weights are passed directly to numpy.histogram.
+            In unbinned mode a weighted extended NLL is used:
+            2 * (sum(N) - sum(w_i * log(f(x_i)))).
         """
-        data = np.asarray(data)
-        n_data = len(data)
+        data = np.asarray(data, dtype=float)
+        weights = np.asarray(weights, dtype=float) if weights is not None else None
+        self._data = data
+        self._weights = weights
+        self._custom_cost = False
+
         param_names = [f"N{i+1}" for i in range(self.num_pdfs)]
+        # Effective event count: sum of weights when weighted, else number of events
+        n_eff = float(weights.sum()) if weights is not None else float(len(data))
 
         if self.binned:
-            # Build bin edges
             if isinstance(set_bins, int):
                 bin_edges = np.linspace(set_fitrange[0], set_fitrange[1], set_bins + 1)
             else:
                 bin_edges = np.asarray(set_bins)
 
-            # Histogram the data
             counts, _ = np.histogram(data, bins=bin_edges, weights=weights)
 
             # Build template histograms for cost.Template (Barlow-Beeston method).
@@ -96,36 +108,55 @@ class Template_Analysis:
                 pdf(bin_centers) * bin_widths * N_mc for pdf in self.template_pdfs
             )
 
-            # iminuit.cost.Template: parameters are the yields N1, N2, ...
             self.cost_func = cost.Template(counts, bin_edges, templates,
                                            name=param_names)
 
         else:
-            # Build a single scaled_pdf function that is the mixture of all templates.
-            # ExtendedUnbinnedNLL expects scaled_pdf(x, *yields) returning
-            # (total_integral_over_range, pdf_evaluated_at_x).
-            lo, hi = set_fitrange
-            pdfs = self.template_pdfs  # capture for closure
+            pdfs = self.template_pdfs
 
-            def scaled_pdf(x, *yields):
-                N = np.array(yields)
-                # Integral of each normalised PDF over the fit range is 1 by definition,
-                # so the total expected count equals sum(N).
-                total = np.sum(N)
-                pdf_at_x = sum(N[i] * pdfs[i](x) for i in range(len(pdfs)))
-                return total, pdf_at_x
+            if weights is not None:
+                # iminuit.cost.ExtendedUnbinnedNLL has no weights parameter, so
+                # we hand-roll the weighted extended NLL:
+                #   2 * (sum(N) - sum(w_i * log(mixture_pdf(x_i))))
+                w = weights
+                data_local = data
+                n_pdfs = self.num_pdfs
 
-            self.cost_func = cost.ExtendedUnbinnedNLL(data, scaled_pdf,
-                                                      name=param_names)
+                def _weighted_enll(*yields):
+                    N = np.array(yields)
+                    total = float(N.sum())
+                    pdf_vals = sum(N[i] * pdfs[i](data_local) for i in range(n_pdfs))
+                    log_pdf = np.log(np.maximum(pdf_vals, 1e-300))
+                    return 2.0 * (total - float(np.dot(w, log_pdf)))
 
-        # Starting values: equal split of total events
-        start = {name: n_data / self.num_pdfs for name in param_names}
+                self.cost_func = _weighted_enll
+                self._custom_cost = True
 
-        self.minuit = iminuit.Minuit(self.cost_func, **start)
+            else:
+                def scaled_pdf(x, *yields):
+                    N = np.array(yields)
+                    # Integral of each normalised PDF over the fit range is 1 by
+                    # definition, so the total expected count equals sum(N).
+                    total = np.sum(N)
+                    pdf_at_x = sum(N[i] * pdfs[i](x) for i in range(len(pdfs)))
+                    return total, pdf_at_x
 
-        # Non-negative yields
+                self.cost_func = cost.ExtendedUnbinnedNLL(data, scaled_pdf,
+                                                          name=param_names)
+
+        # Starting values: equal split of effective event count
+        start = {name: n_eff / self.num_pdfs for name in param_names}
+
+        if self._custom_cost:
+            # *args function has no named parameters; supply names explicitly
+            self.minuit = iminuit.Minuit(self.cost_func,
+                                         *list(start.values()),
+                                         name=param_names)
+        else:
+            self.minuit = iminuit.Minuit(self.cost_func, **start)
+
         for name in param_names:
-            self.minuit.limits[name] = (0, n_data)
+            self.minuit.limits[name] = (0, n_eff)
 
         self.minuit.strategy = self.strategy
         self.minuit.print_level = 0
@@ -219,11 +250,11 @@ class Template_Analysis:
         fractions, frac_errors = self._fraction_errors()
 
         if self.binned:
-            # Pull bin info from the cost function
             bin_edges = self.cost_func.xe
         else:
+            # Use stored data (works for both built-in and custom cost functions)
+            data = self._data if self._data is not None else self.cost_func.data
             if isinstance(bins, int):
-                data = self.cost_func.data
                 bin_edges = np.linspace(data.min(), data.max(), bins + 1)
             else:
                 bin_edges = np.asarray(bins)
