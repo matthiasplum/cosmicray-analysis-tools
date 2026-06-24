@@ -157,9 +157,10 @@ class Template_Analysis:
             raise RuntimeError("Run template_likelihood() before get_results().")
         fractions, frac_errors = self._fraction_errors()
         param_names = [f"N{i+1}" for i in range(self.num_pdfs)]
+        params = self.minuit.parameters
         return {
-            'values':          dict(self.minuit.values),
-            'errors':          dict(self.minuit.errors),
+            'values':          {k: self.minuit.values[k] for k in params},
+            'errors':          {k: self.minuit.errors[k] for k in params},
             'valid':           self.minuit.valid,
             'fval':            self.minuit.fmin.fval,
             'fractions':       dict(zip(param_names, fractions)),
