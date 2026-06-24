@@ -335,3 +335,15 @@ class TestDraw:
         plt.sca(ax)
         ta.draw(bins=len(BINS))
         plt.close(fig)
+
+    def test_draw_custom_colors(self):
+        ta = self._fitted_ta(binned=False)
+        fig, ax = plt.subplots()
+        ta.draw(parts=True, bins=len(BINS), ax=ax,
+                colors=["red", "blue"], total_color="green")
+        lines = ax.get_lines()
+        colors = [l.get_color() for l in lines]
+        assert "red" in colors
+        assert "blue" in colors
+        assert "green" in colors
+        plt.close(fig)

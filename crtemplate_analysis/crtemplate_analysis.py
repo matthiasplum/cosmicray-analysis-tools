@@ -226,7 +226,7 @@ class Template_Analysis:
 
         return fractions, frac_errors
 
-    def draw(self, trues=None, parts=False, bins=None, ax=None):
+    def draw(self, trues=None, parts=False, bins=None, ax=None, colors=None, total_color="black"):
         """
         Plot the fit result overlaid on the data histogram.
 
@@ -240,6 +240,12 @@ class Template_Analysis:
             Bins for unbinned mode display. Ignored in binned mode.
         ax : matplotlib.axes.Axes, optional
             Axes to draw on. Defaults to current axes.
+        colors : list of color, optional
+            Colors for the individual component lines (used when parts=True).
+            Must have at least as many entries as there are templates.
+            Defaults to the current matplotlib color cycle.
+        total_color : color, optional
+            Color for the total fit line. Default is "black".
         """
         if self.minuit is None:
             raise RuntimeError("Run template_likelihood() before draw().")
@@ -282,9 +288,11 @@ class Template_Analysis:
                 fit_info.append(f"N{i+1} = {N_fit[i]:.1f}  f{i+1} = {f_fit:.3f} ± {f_err:.3f}")
 
             if parts:
-                ax.plot(centers, component, label=f"Component N{i+1}", linestyle="--")
+                color = colors[i] if colors is not None else None
+                ax.plot(centers, component, color=color,
+                        label=f"Component N{i+1}", linestyle="--")
 
-        ax.plot(centers, total_fit, color="black", lw=2, label="Total Fit")
+        ax.plot(centers, total_fit, color=total_color, lw=2, label="Total Fit")
 
         props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
         ax.text(0.05, 0.95, "\n".join(fit_info), transform=ax.transAxes,
