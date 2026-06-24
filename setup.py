@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='crtemplate_analysis',
-    version='0.0.2',
+    version='0.0.3',
     url='https://github.com/matthiasplum/cosmicray-analysis-tools',
     author='Matthias Plum',
     author_email='matthias.plum@sdsmt.edu',
