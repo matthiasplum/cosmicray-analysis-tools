@@ -1,6 +1,6 @@
 # cosmicray-analysis-tools
 
-Python library for cosmic-ray mass-composition analysis via template PDF fitting, following the methodology of [Aab et al. (2014)](https://arxiv.org/abs/1906.04317).
+Python library for cosmic-ray mass-composition analysis via template PDF fitting, following the methodology of [Aartsen et al. (2019)](https://arxiv.org/abs/1906.04317).
 
 ## Features
 
