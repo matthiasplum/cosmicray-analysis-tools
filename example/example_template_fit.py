@@ -13,11 +13,11 @@ from crtemplate_analysis.crtemplate_analysis import Template_Analysis
 
 ####Setup example 
 x         = np.linspace(0,np.log(56),200)
-bins      = np.linspace(0,np.log(56),50)
+bins      = np.linspace(0,np.log(56),56)
 fit_range = (0,np.log(56))
 
 ### Binned likelihood
-set_binned = True
+set_binned = False
 ### Fit strategy (0 = Fast, 2= Best)
 set_strategy = 0
 ### run minos to get asymetrical error
@@ -27,7 +27,7 @@ seed = 42
 
 ### Number of events per elementary group
 nH  = 200
-nHe = 0
+nHe = 200
 nO  = 200
 nFe = 500
 
@@ -38,9 +38,9 @@ bound_b   = np.log(56)
 mean_H      = np.log(1)
 scale_H     = 0.75
 mean_He     = np.log(4)
-scale_He    = .75
+scale_He    = 0.75
 mean_O      = np.log(14)
-scale_O     = .75
+scale_O     = 0.75
 mean_Fe     = np.log(56)
 scale_Fe    = 0.75
 
@@ -55,8 +55,6 @@ rv_O  = truncnorm(O_a, O_b,loc=mean_O, scale=scale_O)
 rv_Fe = truncnorm(Fe_a, Fe_b,loc=mean_Fe, scale=scale_Fe)
 
 ### Sampling data set
-rng = np.random.RandomState(seed)
-
 H_data  = rv_H.rvs(nH,random_state=seed)
 He_data = rv_He.rvs(nHe,random_state=seed)
 O_data  = rv_O.rvs(nO,random_state=seed)
@@ -91,13 +89,13 @@ template.join_pdfs(template_pdfs)
 template.template_likelihood(data_flat, bins, fit_range)
 
 # Create a list matching the template_pdfs order: [H, He, O, Fe]
-true_values = None#[nH, nHe, nO, nFe]
+true_values = [nH, nHe, nO, nFe] #None
 
 if set_binned:
     print("Binned")
-    template.likelihood.draw(args=template.minuit.values, errors=template.minuit.errors, trues=true_values, parts=True, ax=ax2)
+    template.draw(trues=true_values, parts=True, bins=len(bins), ax=ax2)
 else:
     print("Unbinned")
-    template.likelihood.draw(args=template.minuit.values, errors=template.minuit.errors, trues=true_values, parts=True, bins=len(bins), ax=ax2)
+    template.draw(trues=true_values, parts=True, bins=len(bins), ax=ax2)
 
 plt.show()
