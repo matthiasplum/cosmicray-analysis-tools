@@ -294,7 +294,9 @@ class Template_Analysis:
 
         ax.plot(centers, total_fit, color=total_color, lw=2, label="Total Fit")
 
-        props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+        props = dict(boxstyle='round', facecolor='white', alpha=0.5)
         ax.text(0.05, 0.95, "\n".join(fit_info), transform=ax.transAxes,
                 fontsize=9, verticalalignment='top', bbox=props)
         ax.legend(loc="upper right")
+        ax.set_xlabel("ln(A)")
+        ax.set_ylabel("counts")

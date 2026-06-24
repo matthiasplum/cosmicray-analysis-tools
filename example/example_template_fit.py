@@ -72,12 +72,14 @@ ax.plot(x, rv_He.pdf(x),'y-', lw=2, alpha=0.6, label='He pdf')
 ax.plot(x, rv_O.pdf(x),'g-', lw=2, alpha=0.6, label='O pdf')
 ax.plot(x, rv_Fe.pdf(x),'b-', lw=2, alpha=0.6, label='Fe pdf')
 ax.legend(loc=0)
+ax.set_xlabel("ln(A)")
+ax.set_ylabel("probability")
 
 ### Ploting histogram and create subplot for fit results
 fig2, (ax1,ax2) = plt.subplots(2, 1)
 
 ax1.hist(data, bins=bins, density=False, stacked=True, histtype='step', color=['r','orange','g','b'])
-ax2.hist(data_flat, bins=bins, density=False) # Changed density to False to line up with absolute counts
+ax2.hist(data_flat, bins=bins, density=False, alpha=0.5) # Changed density to False to line up with absolute counts
 
 ### Create list of the template PDFs or functions
 template_pdfs = [rv_H.pdf,rv_He.pdf,rv_O.pdf,rv_Fe.pdf]
@@ -93,9 +95,9 @@ true_values = [nH, nHe, nO, nFe] #None
 
 if set_binned:
     print("Binned")
-    template.draw(trues=true_values, parts=True, bins=len(bins), ax=ax2)
+    template.draw(trues=true_values, parts=True, bins=len(bins), ax=ax2, colors=['r','orange','g','b'])
 else:
     print("Unbinned")
-    template.draw(trues=true_values, parts=True, bins=len(bins), ax=ax2)
+    template.draw(trues=true_values, parts=True, bins=len(bins), ax=ax2, colors=['r','orange','g','b'])
 
 plt.show()
