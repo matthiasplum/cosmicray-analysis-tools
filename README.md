@@ -38,13 +38,27 @@ from scipy.stats import truncnorm
 from crtemplate_analysis.crtemplate_analysis import Template_Analysis
 
 # 1. Define template PDFs (one per mass group)
-lo, hi = 0.0, np.log(56)
-rv_H  = truncnorm((lo - np.log(1))  / 0.75, (hi - np.log(1))  / 0.75, loc=np.log(1),  scale=0.75)
-rv_Fe = truncnorm((lo - np.log(56)) / 0.75, (hi - np.log(56)) / 0.75, loc=np.log(56), scale=0.75)
+# Parameters for template PDFs
+template_scale   = 0.75
+mass_H, mass_Fe  = 1, 56
+lo, hi           = 0.0, np.log(mass_Fe)
+
+rv_H  = truncnorm((lo - np.log(mass_H))  / template_scale, (hi - np.log(mass_H))  / template_scale, loc=np.log(mass_H),  scale=template_scale)
+rv_Fe = truncnorm((lo - np.log(mass_Fe)) / template_scale, (hi - np.log(mass_Fe)) / template_scale, loc=np.log(mass_Fe), scale=template_scale)
 
 # 2. Generate (or load) observed data
-seed = 42
-data = np.concatenate([rv_H.rvs(300, random_state=seed), rv_Fe.rvs(100, random_state=seed)])
+seed  = 42
+# Define counts for H and Fe events
+set_n_H  = 300
+set_n_Fe = 100
+
+total_samples = set_n_H + set_n_Fe # total number of events
+true_fractions = {'N1': set_n_H / total_samples, 'N2':  set_n_Fe / total_samples} # Define true fractions dictionary based on counts
+
+data = np.concatenate([rv_H.rvs(set_n_H, random_state=seed), rv_Fe.rvs(set_n_Fe, random_state=seed)])
+
+# Binning parameter
+bins = np.linspace(0, np.log(mass_Fe), 50)
 
 # 3. Run the fit
 fit = Template_Analysis(minos=False, binned=False, strategy=0)
@@ -53,8 +67,11 @@ fit.template_likelihood(data, set_bins=np.linspace(lo, hi, 51), set_fitrange=(lo
 
 # 4. Retrieve results
 res = fit.get_results()
-print(res['fractions'])        # {'N1': 0.75, 'N2': 0.25}  (approx.)
-print(res['fraction_errors'])  # covariance-propagated uncertainties
+
+print("Template Analysis Results:")
+print(f"{'':<4} {'Fraction':<10} {'Error':<10} {'True Value':<10}")
+for key in res['fractions']:
+    print(f"{key:<4} {res['fractions'][key]:<10.5f} {res['fraction_errors'][key]:<10.5f} {true_fractions[key]:<10.5f}")
 ```
 
 A complete four-component example (H, He, O, Fe) is in [`example/example_template_fit.py`](example/example_template_fit.py).
