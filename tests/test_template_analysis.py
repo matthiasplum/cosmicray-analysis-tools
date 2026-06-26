@@ -301,6 +301,44 @@ class TestWeightedFit:
 
 
 # ---------------------------------------------------------------------------
+# MINOS errors
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(scope="module")
+def minos_fitted():
+    data = _make_data()
+    rv_low, rv_high = _make_rvs()
+    ta = Template_Analysis(minos=True, binned=False, strategy=1)
+    ta.join_pdfs([rv_low.pdf, rv_high.pdf])
+    ta.template_likelihood(data, BINS, FIT_RANGE)
+    return ta
+
+
+class TestMinos:
+    def test_fit_converged(self, minos_fitted):
+        assert minos_fitted.minuit.valid
+
+    def test_merrors_present(self, minos_fitted):
+        assert minos_fitted.minuit.merrors is not None
+        assert len(minos_fitted.minuit.merrors) == 2
+
+    def test_merrors_asymmetric(self, minos_fitted):
+        """MINOS lower and upper errors need not be equal."""
+        for key, me in minos_fitted.minuit.merrors.items():
+            assert me.lower < 0, f"{key}: lower error should be negative"
+            assert me.upper > 0, f"{key}: upper error should be positive"
+
+    def test_fractions_sum_to_one(self, minos_fitted):
+        res = minos_fitted.get_results()
+        assert abs(sum(res["fractions"].values()) - 1.0) < 1e-9
+
+    def test_fraction_accuracy(self, minos_fitted):
+        res = minos_fitted.get_results()
+        f1_true = N_LOW / (N_LOW + N_HIGH)
+        assert abs(res["fractions"]["N1"] - f1_true) < 0.20
+
+
+# ---------------------------------------------------------------------------
 # draw() smoke test
 # ---------------------------------------------------------------------------
 

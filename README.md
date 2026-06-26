@@ -9,7 +9,7 @@ Python library for cosmic-ray mass-composition analysis via template PDF fitting
 - Any number of mass-component templates
 - HESSE covariance-propagated fraction uncertainties
 - Optional MINOS asymmetric errors
-- Per-event weight support (unbinned mode)
+- Per-event weight support (binned and unbinned modes)
 
 ## Requirements
 
@@ -19,9 +19,14 @@ Python library for cosmic-ray mass-composition analysis via template PDF fitting
 - iminuit ≥ 2.16
 
 ## Installation
-
+local version
 ```bash
 pip install .
+```
+or
+just the package
+```bash
+pip install git+https://github.com/matthiasplum/cosmicray-analysis-tools
 ```
 
 For development (includes pytest and scipy):
@@ -47,7 +52,6 @@ rv_H  = truncnorm((lo - np.log(mass_H))  / template_scale, (hi - np.log(mass_H))
 rv_Fe = truncnorm((lo - np.log(mass_Fe)) / template_scale, (hi - np.log(mass_Fe)) / template_scale, loc=np.log(mass_Fe), scale=template_scale)
 
 # 2. Generate (or load) observed data
-seed  = 42
 # Define counts for H and Fe events
 set_n_H  = 300
 set_n_Fe = 100
@@ -55,10 +59,7 @@ set_n_Fe = 100
 total_samples = set_n_H + set_n_Fe # total number of events
 true_fractions = {'N1': set_n_H / total_samples, 'N2':  set_n_Fe / total_samples} # Define true fractions dictionary based on counts
 
-data = np.concatenate([rv_H.rvs(set_n_H, random_state=seed), rv_Fe.rvs(set_n_Fe, random_state=seed)])
-
-# Binning parameter
-bins = np.linspace(0, np.log(mass_Fe), 50)
+data = np.concatenate([rv_H.rvs(set_n_H, random_state=0), rv_Fe.rvs(set_n_Fe, random_state=1)])
 
 # 3. Run the fit
 fit = Template_Analysis(minos=False, binned=False, strategy=0)
@@ -90,15 +91,15 @@ A complete four-component example (H, He, O, Fe) is in [`example/example_templat
 
 Register template PDFs. Each callable must accept an array of x values and return a normalised probability density.
 
-### `.template_likelihood(data, bins, set_fitrange, weights=None)`
+### `.template_likelihood(data, set_bins, set_fitrange, weights=None)`
 
 Build the cost function and run the fit.
 
 | Parameter      | Type              | Description |
 |----------------|-------------------|-------------|
 | `data`         | array-like        | Observed events |
-| `bins`         | int or array-like | Bin count or explicit edges |
-| `set_fitrange` | tuple             | `(low, high)` fit range (used when `bins` is an int) |
+| `set_bins`     | int or array-like | Bin count or explicit edges |
+| `set_fitrange` | tuple             | `(low, high)` fit range (used when `set_bins` is an int) |
 | `weights`      | array-like        | Per-event weights (both binned and unbinned modes) |
 
 **Weighted fits:**  in binned mode the weights are forwarded to `numpy.histogram`.
@@ -129,9 +130,18 @@ Returns a dict with keys:
 | `fractions`       | Fitted fractions `f_i = N_i / Σ N` |
 | `fraction_errors` | Covariance-propagated fraction uncertainties |
 
-### `.draw(trues=None, parts=False, bins=None, ax=None)`
+### `.draw(trues=None, parts=False, bins=None, ax=None, colors=None, total_color="black")`
 
-Plot the fit overlaid on a data histogram. Pass `trues` (list of true yields) to show true fractions in the legend; `parts=True` to draw individual components.
+Plot the fit overlaid on a data histogram.
+
+| Parameter     | Type              | Description |
+|---------------|-------------------|-------------|
+| `trues`       | list of float     | True yields — shown alongside fitted fractions in the legend |
+| `parts`       | bool              | If `True`, plot each component as a dashed line |
+| `bins`        | int or array-like | Bins for unbinned mode display; ignored in binned mode |
+| `ax`          | `Axes`            | Axes to draw on; defaults to current axes |
+| `colors`      | list of color     | Colors for individual component lines (requires `parts=True`) |
+| `total_color` | color             | Color for the total fit line (default: `"black"`) |
 
 ## Running tests
 
@@ -142,4 +152,3 @@ pytest
 ## To do
 
 - Numba support for faster unbinned fits on large datasets
-- Weighted event dataset validation
