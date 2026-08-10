@@ -143,6 +143,32 @@ Plot the fit overlaid on a data histogram.
 | `colors`      | list of color     | Colors for individual component lines (requires `parts=True`) |
 | `total_color` | color             | Color for the total fit line (default: `"black"`) |
 
+### `.draw_fraction_contours(labels=None, sigma_levels=(1, 2), color="blue", true_color="red", trues=None, title=None, fig=None)`
+
+Plot pairwise 2D confidence ellipses for all fitted fraction combinations.
+
+| Parameter      | Type           | Description |
+|----------------|----------------|-------------|
+| `labels`       | list of str    | Component names for axis labels (e.g. `["H", "He", "O", "Fe"]`). Defaults to `["N1", "N2", ...]` |
+| `sigma_levels` | tuple of int   | Sigma contours to draw (default: `(1, 2)`) |
+| `color`        | color          | Color for the fit ellipses and best-fit marker (default: `"blue"`) |
+| `true_color`   | color          | Color for the true-value marker (default: `"red"`) |
+| `trues`        | list of float  | True yields in template order — converted to fractions and shown as a star on each panel |
+| `title`        | str            | Figure suptitle |
+| `fig`          | `Figure`       | Existing figure to draw into; a new one is created if not given |
+
+Returns `(fig, axes)`. Ellipses use the physics convention Δχ² = n_σ² per contour.
+
+```python
+fig, axes = fit.draw_fraction_contours(
+    labels=["H", "He", "O", "Fe"],
+    sigma_levels=(1, 2),
+    color="blue",
+    trues=[200, 200, 200, 400],   # optional true yields
+    title="Log(E/GeV): 7.45",
+)
+```
+
 ## Running tests
 
 ```bash

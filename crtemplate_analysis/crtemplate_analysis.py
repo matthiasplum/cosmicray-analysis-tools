@@ -5,6 +5,7 @@ Rewritten to use iminuit built-in cost functions (iminuit.cost)
 @author: Matthias Plum
 @email:  matthias.plum@sdsmt.edu
 '''
+import math
 import numpy as np
 import iminuit
 from iminuit import cost
@@ -300,3 +301,120 @@ class Template_Analysis:
         ax.legend(loc="upper right")
         ax.set_xlabel("ln(A)")
         ax.set_ylabel("counts")
+
+    def draw_fraction_contours(self, labels=None, sigma_levels=(1, 2),
+                               color="blue", true_color="red",
+                               trues=None, title=None, fig=None):
+        """
+        Plot pairwise 2D confidence ellipses for all fitted fraction pairs.
+
+        Each panel shows the best-fit point and one ellipse per sigma level.
+        The ellipses are derived from the fraction covariance matrix using the
+        physics convention: delta_chi2 = n_sigma^2 per contour (equivalent to
+        the 1D n-sigma interval projected onto each axis).
+
+        Parameters
+        ----------
+        labels : list of str, optional
+            Component names for axis labels (e.g. ["H", "He", "O", "Fe"]).
+            Defaults to ["N1", "N2", ...].
+        sigma_levels : tuple of int, optional
+            Which sigma contours to draw. Default is (1, 2).
+        color : color, optional
+            Line and marker color for the fit. Default is "blue".
+        true_color : color, optional
+            Marker color for the true values. Default is "red".
+        trues : list of float, optional
+            True yields in the same order as the templates. Converted to
+            fractions internally and drawn as a marker on each panel.
+        title : str, optional
+            Figure suptitle.
+        fig : matplotlib.figure.Figure, optional
+            Existing figure to draw into. A new one is created if not given.
+
+        Returns
+        -------
+        fig : matplotlib.figure.Figure
+        axes : ndarray of Axes
+        """
+        if self.minuit is None:
+            raise RuntimeError(
+                "Run template_likelihood() before draw_fraction_contours().")
+
+        n = self.num_pdfs
+        fractions, _ = self._fraction_errors()
+
+        # Full fraction covariance via Jacobian propagation
+        values = np.array([self.minuit.values[f"N{i+1}"] for i in range(n)])
+        cov = np.array(self.minuit.covariance)
+        N_total = values.sum()
+        J = np.full((n, n), -values[:, None] / N_total**2)
+        np.fill_diagonal(J, (N_total - values) / N_total**2)
+        frac_cov = J @ cov @ J.T
+
+        if labels is None:
+            labels = [f"N{i+1}" for i in range(n)]
+
+        true_fracs = None
+        if trues is not None:
+            t = np.asarray(trues, dtype=float)
+            true_fracs = t / t.sum()
+
+        pairs = [(i, j) for i in range(n) for j in range(i + 1, n)]
+        n_pairs = len(pairs)
+
+        n_cols = math.ceil(math.sqrt(n_pairs))
+        n_rows = math.ceil(n_pairs / n_cols)
+
+        if fig is None:
+            fig, axes_grid = plt.subplots(n_rows, n_cols,
+                                          figsize=(4 * n_cols, 4 * n_rows),
+                                          squeeze=False)
+        else:
+            axes_grid = np.array(fig.get_axes()).reshape(n_rows, n_cols)
+
+        axes_flat = axes_grid.flatten()
+
+        theta = np.linspace(0, 2 * np.pi, 300)
+        unit_circle = np.array([np.cos(theta), np.sin(theta)])
+
+        for idx, (i, j) in enumerate(pairs):
+            ax = axes_flat[idx]
+
+            cov2 = frac_cov[np.ix_([i, j], [i, j])]
+            center = np.array([fractions[i], fractions[j]])
+
+            eigvals, eigvecs = np.linalg.eigh(cov2)
+            eigvals = np.maximum(eigvals, 0.0)
+
+            for n_sig in sorted(sigma_levels, reverse=True):
+                # delta_chi2 = n_sigma^2 (physics / 1D-projection convention)
+                scale = np.sqrt(eigvals * n_sig**2)
+                ellipse = eigvecs @ (scale[:, None] * unit_circle)
+                ax.plot(center[0] + ellipse[0], center[1] + ellipse[1],
+                        color=color, lw=1.5,
+                        label=f"{n_sig}σ" if idx == 0 else None)
+
+            ax.plot(*center, "o", color=color, ms=5,
+                    label="Best fit" if idx == 0 else None)
+
+            if true_fracs is not None:
+                ax.plot(true_fracs[i], true_fracs[j], "*", color=true_color,
+                        ms=8, label="True value" if idx == 0 else None)
+
+            ax.set_xlabel(f"{labels[i]} Frac.", fontsize=11)
+            ax.set_ylabel(f"{labels[j]} Frac.", fontsize=11)
+            ax.set_xlim(0, 1)
+            ax.set_ylim(0, 1)
+            ax.grid(True, linestyle="--", alpha=0.4)
+
+        for idx in range(n_pairs, len(axes_flat)):
+            axes_flat[idx].set_visible(False)
+
+        axes_flat[0].legend(loc="upper right", fontsize=9)
+
+        if title:
+            fig.suptitle(title, fontsize=13)
+
+        fig.tight_layout()
+        return fig, axes_grid

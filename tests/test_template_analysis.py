@@ -202,7 +202,7 @@ def _make_four_component_fit():
         truncnorm((lo - m) / scale, (hi - m) / scale, loc=m, scale=scale)
         for m in means
     ]
-    counts = [200, 200, 200, 500]
+    counts = [200, 200, 200, 400]
     rng = np.random.default_rng(42)
     data = np.concatenate([
         rv.rvs(n, random_state=rng.integers(1 << 31))
@@ -336,6 +336,55 @@ class TestMinos:
         res = minos_fitted.get_results()
         f1_true = N_LOW / (N_LOW + N_HIGH)
         assert abs(res["fractions"]["N1"] - f1_true) < 0.20
+
+
+# ---------------------------------------------------------------------------
+# draw_fraction_contours()
+# ---------------------------------------------------------------------------
+
+class TestDrawFractionContours:
+    def _fitted_ta(self):
+        data = _make_data()
+        ta = _make_fitter(binned=False)
+        ta.template_likelihood(data, BINS, FIT_RANGE)
+        return ta
+
+    def test_returns_fig_and_axes(self):
+        ta = self._fitted_ta()
+        fig, axes = ta.draw_fraction_contours()
+        assert isinstance(fig, plt.Figure)
+        assert axes.shape == (1, 1)   # 2 components → 1 pair → 1x1 grid
+        plt.close(fig)
+
+    def test_four_component_grid_shape(self, four_component_fitted):
+        ta, _ = four_component_fitted
+        fig, axes = ta.draw_fraction_contours()
+        n_pairs = 6   # C(4,2)
+        assert axes.size >= n_pairs
+        plt.close(fig)
+
+    def test_custom_labels(self):
+        ta = self._fitted_ta()
+        fig, axes = ta.draw_fraction_contours(labels=["H", "Fe"])
+        ax = axes.flatten()[0]
+        assert "H" in ax.get_xlabel()
+        assert "Fe" in ax.get_ylabel()
+        plt.close(fig)
+
+    def test_single_sigma_level(self):
+        ta = self._fitted_ta()
+        fig, axes = ta.draw_fraction_contours(sigma_levels=(1,))
+        ax = axes.flatten()[0]
+        # 1 ellipse line + 1 best-fit marker dot = 2 lines total
+        assert len(ax.get_lines()) == 2
+        plt.close(fig)
+
+    def test_before_fit_raises(self):
+        ta = Template_Analysis()
+        rv_low, _ = _make_rvs()
+        ta.join_pdfs([rv_low.pdf])
+        with pytest.raises(RuntimeError):
+            ta.draw_fraction_contours()
 
 
 # ---------------------------------------------------------------------------

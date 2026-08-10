@@ -29,7 +29,7 @@ seed = 42
 nH  = 200
 nHe = 200
 nO  = 200
-nFe = 500
+nFe = 400
 
 ### Template shape generation
 bound_a   = 0.
@@ -99,5 +99,14 @@ if set_binned:
 else:
     print("Unbinned")
     template.draw(trues=true_values, parts=True, bins=len(bins), ax=ax2, colors=['r','orange','g','b'])
+
+### Contour plot of correlated fractions
+template.draw_fraction_contours(
+    labels=["H", "He", "O", "Fe"],
+    sigma_levels=(1, 2),
+    color="blue",
+    trues=true_values,
+    title="Fraction correlations",
+)
 
 plt.show()

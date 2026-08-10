@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-10
+
+### Added
+- `draw_fraction_contours()` method: pairwise 2D confidence ellipses for all
+  fitted fraction pairs, with optional true-value markers and configurable
+  sigma levels, colors, and labels
+- `colors` and `total_color` parameters on `draw()` for per-component and
+  total-fit line colours
+- Per-event weight support in unbinned mode via a hand-rolled weighted
+  extended NLL (iminuit ≥ 2.x has no native weights parameter for
+  `ExtendedUnbinnedNLL`)
+
+### Changed
+- Example script: `nFe` reduced from 500 to 400; contour plot added at the end
+
 ## [0.1.0] - 2026-06-24
 
 ### Added
