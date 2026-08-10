@@ -4,10 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [0.2.0] - 2026-08-10
+## [1.0.0] - 2026-08-10
 
 ### Added
 - `CITATION.cff` for GitHub/Zenodo automatic citation support
+
+### Changed
+- Version bumped to 1.0.0 (stable release)
+- Development status updated to Production/Stable
+- CI matrix extended to Python 3.13 and 3.14
 
 ### Added
 - `draw_fraction_contours()` method: pairwise 2D confidence ellipses for all

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "crtemplate_analysis"
-version = "0.2.0"
+version = "1.0.0"
 description = "Cosmic-ray mass-composition analysis via template PDF fitting"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -12,7 +12,7 @@ authors = [{ name = "Matthias Plum", email = "matthias.plum@sdsmt.edu" }]
 requires-python = ">=3.9"
 keywords = ["cosmic-ray", "mass-composition", "template-fit", "physics"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Physics",
     "License :: OSI Approved :: MIT License",
@@ -21,6 +21,8 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
     "numpy>=1.21",

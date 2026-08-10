@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this software in a publication, please cite it using the metadata below."
 title: "cosmicray-analysis-tools"
-version: 0.2.0
+version: 1.0.0
 date-released: 2026-08-10
 license: MIT
 repository-code: "https://github.com/matthiasplum/cosmicray-analysis-tools"
