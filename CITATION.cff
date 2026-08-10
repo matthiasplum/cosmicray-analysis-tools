@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use this software in a publication, please cite it using the metadata below."
+title: "cosmicray-analysis-tools"
+version: 0.2.0
+date-released: 2026-08-10
+license: MIT
+repository-code: "https://github.com/matthiasplum/cosmicray-analysis-tools"
+authors:
+  - family-names: Plum
+    given-names: Matthias
+    email: matthias.plum@sdsmt.edu
+abstract: >
+  Python library for cosmic-ray mass-composition analysis via template PDF
+  fitting. Supports unbinned and binned extended likelihood fits for any
+  number of mass-component templates, with HESSE/MINOS error estimation,
+  per-event weights, and pairwise fraction contour plots.
+keywords:
+  - cosmic-ray
+  - mass-composition
+  - template-fit
+  - iminuit
+  - physics
+references:
+  - type: article
+    title: "Cosmic Ray Spectrum and Composition from PeV to EeV Using 3 Years of Data From IceTop and IceCube"
+    authors:
+      - name: "Aartsen et al. (IceCube Collaboration)"
+    year: 2019
+    url: "https://arxiv.org/abs/1906.04317"

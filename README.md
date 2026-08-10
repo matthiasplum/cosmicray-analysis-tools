@@ -169,6 +169,22 @@ fig, axes = fit.draw_fraction_contours(
 )
 ```
 
+## Citation
+
+If you use this software in a publication, please cite it:
+
+```bibtex
+@software{plum_cosmicray_analysis_tools,
+  author  = {Plum, Matthias},
+  title   = {cosmicray-analysis-tools},
+  version = {0.2.0},
+  url     = {https://github.com/matthiasplum/cosmicray-analysis-tools},
+  year    = {2026}
+}
+```
+
+A `CITATION.cff` file is included for automatic citation support on GitHub and Zenodo.
+
 ## Running tests
 
 ```bash

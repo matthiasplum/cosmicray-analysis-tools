@@ -7,6 +7,9 @@ All notable changes to this project will be documented in this file.
 ## [0.2.0] - 2026-08-10
 
 ### Added
+- `CITATION.cff` for GitHub/Zenodo automatic citation support
+
+### Added
 - `draw_fraction_contours()` method: pairwise 2D confidence ellipses for all
   fitted fraction pairs, with optional true-value markers and configurable
   sigma levels, colors, and labels
