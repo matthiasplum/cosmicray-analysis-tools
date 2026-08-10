@@ -306,12 +306,15 @@ class Template_Analysis:
                                color="blue", true_color="red",
                                trues=None, title=None, fig=None):
         """
-        Plot pairwise 2D confidence ellipses for all fitted fraction pairs.
+        Plot pairwise 2D confidence contours for all fitted fraction pairs.
 
-        Each panel shows the best-fit point and one ellipse per sigma level.
-        The ellipses are derived from the fraction covariance matrix using the
-        physics convention: delta_chi2 = n_sigma^2 per contour (equivalent to
-        the 1D n-sigma interval projected onto each axis).
+        When ``minos=True`` was passed at construction, the contours are drawn
+        by scanning the likelihood surface with ``iminuit.mncontour`` for each
+        pair of yield parameters and converting the result to fraction space.
+        This correctly captures asymmetric uncertainties.
+
+        When ``minos=False``, symmetric ellipses are drawn from the HESSE
+        covariance matrix using the physics convention delta_chi2 = n_sigma^2.
 
         Parameters
         ----------
@@ -375,25 +378,78 @@ class Template_Analysis:
 
         axes_flat = axes_grid.flatten()
 
+        # Pre-compute HESSE ellipse helpers (used when minos=False)
         theta = np.linspace(0, 2 * np.pi, 300)
         unit_circle = np.array([np.cos(theta), np.sin(theta)])
 
+        # Best-fit yields — needed for yield→fraction conversion in MINOS mode
+        best_vals = np.array([self.minuit.values[f"N{k+1}"] for k in range(n)])
+
         for idx, (i, j) in enumerate(pairs):
             ax = axes_flat[idx]
-
-            cov2 = frac_cov[np.ix_([i, j], [i, j])]
             center = np.array([fractions[i], fractions[j]])
 
-            eigvals, eigvecs = np.linalg.eigh(cov2)
-            eigvals = np.maximum(eigvals, 0.0)
-
             for n_sig in sorted(sigma_levels, reverse=True):
-                # delta_chi2 = n_sigma^2 (physics / 1D-projection convention)
-                scale = np.sqrt(eigvals * n_sig**2)
-                ellipse = eigvecs @ (scale[:, None] * unit_circle)
-                ax.plot(center[0] + ellipse[0], center[1] + ellipse[1],
-                        color=color, lw=1.5,
-                        label=f"{n_sig}σ" if idx == 0 else None)
+                # CL for the proper 2D n-sigma contour.
+                # For chi2 with 2 DOF: quantile = -2*log(1-CL), so both
+                # HESSE and MINOS use the same Δχ² threshold and are
+                # directly comparable.
+                cl = math.erf(n_sig / math.sqrt(2))
+                # chi2(2 dof) quantile: exact closed form for 2 DOF
+                chi2_val = -2.0 * math.log(1.0 - cl)
+
+                if self.minos:
+                    # Scan the likelihood surface for each pair of yields.
+                    contour_pts = self.minuit.mncontour(
+                        f"N{i+1}", f"N{j+1}", cl=cl, size=100
+                    )
+                    # Convert yield contour points to fraction space.
+                    # For n>2 components the non-contoured yields are profiled
+                    # (minimised) at each boundary point so the fractions are
+                    # consistent with what mncontour computed internally.
+                    fc_x, fc_y = [], []
+                    needs_profile = n > 2
+                    if needs_profile:
+                        # Fix Ni and Nj; migrad over remaining yields at each point.
+                        for k in range(n):
+                            self.minuit.fixed[f"N{k+1}"] = (k == i or k == j)
+                        self.minuit.strategy = 0
+                    for nx, ny in contour_pts:
+                        vals = best_vals.copy()
+                        vals[i] = nx
+                        vals[j] = ny
+                        if needs_profile:
+                            for k in range(n):
+                                self.minuit.values[f"N{k+1}"] = vals[k]
+                            self.minuit.migrad()
+                            for k in range(n):
+                                if k != i and k != j:
+                                    vals[k] = self.minuit.values[f"N{k+1}"]
+                        n_tot = vals.sum()
+                        fc_x.append(vals[i] / n_tot)
+                        fc_y.append(vals[j] / n_tot)
+                    if needs_profile:
+                        # Restore minuit to best-fit state
+                        for k in range(n):
+                            self.minuit.fixed[f"N{k+1}"] = False
+                            self.minuit.values[f"N{k+1}"] = best_vals[k]
+                        self.minuit.strategy = self.strategy
+                        self.minuit.hesse()
+                    # Close the contour
+                    fc_x.append(fc_x[0])
+                    fc_y.append(fc_y[0])
+                    ax.plot(fc_x, fc_y, color=color, lw=1.5,
+                            label=f"{n_sig}σ" if idx == 0 else None)
+                else:
+                    # HESSE ellipse at the same 2D CL as the MINOS contour
+                    cov2 = frac_cov[np.ix_([i, j], [i, j])]
+                    eigvals, eigvecs = np.linalg.eigh(cov2)
+                    eigvals = np.maximum(eigvals, 0.0)
+                    scale = np.sqrt(eigvals * chi2_val)
+                    ellipse = eigvecs @ (scale[:, None] * unit_circle)
+                    ax.plot(center[0] + ellipse[0], center[1] + ellipse[1],
+                            color=color, lw=1.5,
+                            label=f"{n_sig}σ" if idx == 0 else None)
 
             ax.plot(*center, "o", color=color, ms=5,
                     label="Best fit" if idx == 0 else None)
