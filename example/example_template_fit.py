@@ -101,12 +101,14 @@ else:
     template.draw(trues=true_values, parts=True, bins=len(bins), ax=ax2, colors=['r','orange','g','b'])
 
 ### Contour plot of correlated fractions
+### Uses MINOS contours when run_minos=True (asymmetric, likelihood-based),
+### otherwise falls back to symmetric HESSE ellipses.
 template.draw_fraction_contours(
     labels=["H", "He", "O", "Fe"],
     sigma_levels=(1, 2),
     color="blue",
     trues=true_values,
-    title="Fraction correlations",
+    title=f"Fraction correlations ({'MINOS' if run_minos else 'HESSE'})",
 )
 
 plt.show()

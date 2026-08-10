@@ -386,6 +386,17 @@ class TestDrawFractionContours:
         with pytest.raises(RuntimeError):
             ta.draw_fraction_contours()
 
+    def test_minos_contour(self, minos_fitted):
+        """MINOS path: mncontour scan should produce a closed non-ellipse curve."""
+        fig, axes = minos_fitted.draw_fraction_contours(sigma_levels=(1,))
+        ax = axes.flatten()[0]
+        lines = ax.get_lines()
+        # 1 contour line + 1 best-fit dot = 2 artists
+        assert len(lines) == 2
+        # Contour should have more than 2 points (it's a closed curve)
+        assert len(lines[0].get_xdata()) > 2
+        plt.close(fig)
+
 
 # ---------------------------------------------------------------------------
 # draw() smoke test

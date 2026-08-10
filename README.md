@@ -157,15 +157,38 @@ Plot pairwise 2D confidence ellipses for all fitted fraction combinations.
 | `title`        | str            | Figure suptitle |
 | `fig`          | `Figure`       | Existing figure to draw into; a new one is created if not given |
 
-Returns `(fig, axes)`. Ellipses use the physics convention Δχ² = n_σ² per contour.
+Returns `(fig, axes)`.
+
+**Contour mode depends on how the fit was configured:**
+
+| `minos` at construction | Contour type |
+|-------------------------|--------------|
+| `False` (default)       | Symmetric ellipses from the HESSE covariance matrix. Fast. Uses Δχ² = −2·log(1−CL) for the proper 2D confidence level. |
+| `True`                  | Asymmetric contours from `iminuit.mncontour`, which scans the likelihood surface. For n>2 components the non-contoured yields are profiled at each boundary point before converting to fraction space, giving geometrically correct contours. Slower. |
 
 ```python
+# HESSE ellipses (fast)
+fit = Template_Analysis(minos=False, binned=False, strategy=0)
+fit.join_pdfs(template_pdfs)
+fit.template_likelihood(data, bins, fit_range)
 fig, axes = fit.draw_fraction_contours(
     labels=["H", "He", "O", "Fe"],
     sigma_levels=(1, 2),
     color="blue",
-    trues=[200, 200, 200, 400],   # optional true yields
-    title="Log(E/GeV): 7.45",
+    trues=[200, 200, 200, 400],
+    title="Fraction correlations (HESSE)",
+)
+
+# MINOS contours (asymmetric, likelihood-based)
+fit = Template_Analysis(minos=True, binned=False, strategy=1)
+fit.join_pdfs(template_pdfs)
+fit.template_likelihood(data, bins, fit_range)
+fig, axes = fit.draw_fraction_contours(
+    labels=["H", "He", "O", "Fe"],
+    sigma_levels=(1, 2),
+    color="blue",
+    trues=[200, 200, 200, 400],
+    title="Fraction correlations (MINOS)",
 )
 ```
 

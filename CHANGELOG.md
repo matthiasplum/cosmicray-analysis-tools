@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- `draw_fraction_contours()` with `minos=True`: non-contoured yields are now
+  profiled at each MINOS boundary point before converting to fraction space,
+  eliminating contour distortion for n>2 components
+
+### Changed
+- `draw_fraction_contours()` HESSE ellipses now use the proper 2D confidence
+  level Δχ² = −2·log(1−CL), consistent with the MINOS contour threshold
+- Example script: contour plot title now reflects whether MINOS or HESSE was used
+
 ## [1.0.0] - 2026-08-10
 
 ### Added
