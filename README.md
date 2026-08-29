@@ -200,7 +200,7 @@ If you use this software in a publication, please cite it:
 @software{plum_cosmicray_analysis_tools,
   author  = {Plum, Matthias},
   title   = {cosmicray-analysis-tools},
-  version = {1.0.0},
+  version = {1.0.1},
   url     = {https://github.com/matthiasplum/cosmicray-analysis-tools},
   year    = {2026}
 }

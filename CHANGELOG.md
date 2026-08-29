@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.0.1] - 2026-08-29
 
 ### Fixed
 - `draw_fraction_contours()` with `minos=True`: non-contoured yields are now
