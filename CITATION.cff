@@ -3,6 +3,9 @@ message: "If you use this software in a publication, please cite it using the me
 title: "cosmicray-analysis-tools"
 version: 1.0.1
 date-released: 2026-08-10
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.22162034
 license: MIT
 repository-code: "https://github.com/matthiasplum/cosmicray-analysis-tools"
 authors:

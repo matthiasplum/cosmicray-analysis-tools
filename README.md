@@ -201,6 +201,7 @@ If you use this software in a publication, please cite it:
   author  = {Plum, Matthias},
   title   = {cosmicray-analysis-tools},
   version = {1.0.1},
+  doi     = {10.5281/zenodo.22162034},
   url     = {https://github.com/matthiasplum/cosmicray-analysis-tools},
   year    = {2026}
 }
